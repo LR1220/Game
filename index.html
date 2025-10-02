@@ -22,7 +22,7 @@ button{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-
 button:hover{background:var(--accent-dark)}
 #next-riddle-button{background:#ff8c00 !important;color:#fff !important;padding:12px 18px;border-radius:10px;box-shadow:0 8px 18px rgba(255,140,0,0.28);font-weight:800;border:none}
 #next-riddle-button:hover{transform:translateY(-2px)}
-body::before{content:"";position:fixed;inset:0;background-image:url('https://img.freepik.com/free-photo/truth-concept-composition-detective-desk_23-2149051319.jpg?semt=ais_hybrid&w=740&q=80');background-size:cover;background-position:center;opacity:0.75;z-index:-1}
+body::before{content:"";position:fixed;inset:0;background-image:url('https://img.freepik.com/free-photo/truth-concept-composition-detective-desk_23-2149051319.jpg?semt=ais_hybrid&w=740&q=80');backgrou[...]
 #floor-plan-container{position:relative;max-width:520px;margin:12px auto 0;display:none}
 #floor-plan{width:100%;border-radius:8px;display:block}
 .hotspot{position:absolute;border:2px solid yellow;background:rgba(255,255,0,0.18);opacity:0;border-radius:6px;transition:opacity .25s, transform .18s;z-index:999;pointer-events:auto}
@@ -37,7 +37,7 @@ body::before{content:"";position:fixed;inset:0;background-image:url('https://img
 .memory-card.matched{background:var(--success);color:#012}
 #puzzle-board{width:300px;height:300px;margin:12px auto;display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:3px solid var(--accent);border-radius:6px;overflow:hidden}
 .puzzle-slot{width:100px;height:100px;border:1px dashed rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center}
-.puzzle-piece{width:100px;height:100px;cursor:grab;background-image:url('https://content.elmueble.com/medio/2023/10/26/sigue-estos-trucos-para-alargar-la-vida-de-tus-plantas-en-macetas_b6d2aa07_231026103457_900x900.jpg');background-size:300px 300px}
+.puzzle-piece{width:100px;height:100px;cursor:grab;background-image:url('https://content.elmueble.com/medio/2023/10/26/sigue-estos-trucos-para-alargar-la-vida-de-tus-plantas-en-macetas_b6d2aa07_231026[...]
 #piece-1 {background-position:   0   0;}
 #piece-2 {background-position: -100px   0;}
 #piece-3 {background-position: -200px   0;}
@@ -145,7 +145,7 @@ body::before{content:"";position:fixed;inset:0;background-image:url('https://img
 <audio id="washing-audio" src="lavadora.mp3" preload="auto"></audio>
 <audio id="bg-music" src="background.mp3" preload="auto" loop></audio>
 
-<div id="final-overlay"><div id="final-box"><h2 id="final-title">¡FELICIDADES!</h2><p id="final-message">Has encontrado todos los regalos.</p><div style="margin-top:12px"><button id="close-final">Cerrar</button></div></div></div>
+<div id="final-overlay"><div id="final-box"><h2 id="final-title">¡FELICIDADES!</h2><p id="final-message">Has encontrado todos los regalos.</p><div style="margin-top:12px"><button id="close-final">Cer[...]
 
 <script>
 // ----- Configuración de acertijos -----
@@ -206,7 +206,7 @@ const nextRiddleBtn = document.getElementById('next-riddle-button');
 // ----- Audio helpers -----
 let audioCtx = null;
 function ensureAudioCtx(){ if(!audioCtx){ try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audioCtx = null; } } }
-function beep(freq, dur=0.12){ ensureAudioCtx(); if(!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type='sine'; o.frequency.value = freq; g.gain.value = 0.0001; o.connect(g); g.connect(audioCtx.destination); const now = audioCtx.currentTime; g.gain.exponentialRampToValueAtTime(0.2, now+0.01); o.start(now); g.gain.exponentialRampToValueAtTime(0.0001, now+dur); o.stop(now+dur+0.02); }
+function beep(freq, dur=0.12){ ensureAudioCtx(); if(!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type='sine'; o.frequency.value = freq; g.gain.value = 0[...]
 function playCorrect(){ 
   beep(880,0.12); 
   if (navigator.vibrate) navigator.vibrate(120); // vibración corta
@@ -263,10 +263,20 @@ washingAudio.addEventListener('ended', ()=>{ duckBg(false, 0.25, 300); });
 
 // ----- Next button control -----
 function enableNextButton(){ nextRiddleBtn.style.display = 'inline-block'; }
-nextRiddleBtn.addEventListener('click', ()=>{ nextRiddleBtn.style.display = 'none'; currentIndex++; loadRiddle(currentIndex); });
+nextRiddleBtn.addEventListener('click', ()=>{ nextRiddleBtn.style.display='none'; currentIndex++; loadRiddle(currentIndex); });
 
 // ----- Start/verification -----
-startButton.addEventListener('click', ()=>{ startOverlay.style.display='none'; verificationContainer.style.display='block'; startCamera(); });
+startButton.addEventListener('click', ()=>{
+  startOverlay.style.display='none';
+  verificationContainer.style.display='block';
+  // --- CORRECCIÓN: INICIAR MÚSICA DE FONDO EN EL PRIMER CLICK ---
+  if(bgMusic) {
+    bgMusic.currentTime = 0;
+    bgMusic.play().catch(()=>{}); // por si el navegador la bloquea, ignora el error
+  }
+  startCamera();
+});
+
 verifyButton.addEventListener('click', ()=>{
   stopCamera();
 verifyButton.style.display = 'none';
@@ -351,18 +361,18 @@ function loadRiddle(idx){
 }
 
 // ----- Hotspot (bed) -----
-function handleHotspot(isOver){ const r = riddles[currentIndex]; if(r.interaction!=='hotspot' || r.solved || hotspotHandled) return; if(isOver){ hotspotHandled=true; bedHotspot.classList.add('active'); playCorrect(); r.solved=true; updateProgress(); riddleText.textContent = '¡Has resuelto el acertijo! El regalo está oculto bajo la cama.'; enableNextButton(); } }
+function handleHotspot(isOver){ const r = riddles[currentIndex]; if(r.interaction!=='hotspot' || r.solved || hotspotHandled) return; if(isOver){ hotspotHandled=true; bedHotspot.classList.add('active')[...]
 // use pointer events for reliable hover detection (mouse & touch pointers)
 bedHotspot.addEventListener('pointerenter', ()=>handleHotspot(true));
 bedHotspot.addEventListener('click', ()=>handleHotspot(true));
 bedHotspot.addEventListener('touchstart', ()=>handleHotspot(true));
 // keep touchstart detection on container but DO NOT require click; the pointer events above will fire on touch-capable browsers that support pointer events
-floorPlanContainer.addEventListener('touchstart', function(e){ if(riddles[currentIndex] && riddles[currentIndex].interaction==='hotspot'){ const t = e.touches[0]; const rect = bedHotspot.getBoundingClientRect(); const isOver = (t.clientX>=rect.left && t.clientX<=rect.right && t.clientY>=rect.top && t.clientY<=rect.bottom); if(isOver) handleHotspot(true); } }, {passive:false});
+floorPlanContainer.addEventListener('touchstart', function(e){ if(riddles[currentIndex] && riddles[currentIndex].interaction==='hotspot'){ const t = e.touches[0]; const rect = bedHotspot.getBoundingCl[...]
 
 // ----- Sound riddle -----
 playSoundBtn.addEventListener('click', ()=>{ washingAudio.currentTime = 0; const p = washingAudio.play(); if(p && typeof p.catch==='function') p.catch(()=>{}); });
 stopSoundBtn.addEventListener('click', ()=>{ washingAudio.pause(); washingAudio.currentTime = 0; feedback.textContent = 'Audio detenido.'; });
-answerSoundBtn.addEventListener('click', ()=>{ const guess = (answerSoundInput.value||'').toLowerCase().trim(); const r = riddles[currentIndex]; if(guess === (r.answer||'').toLowerCase()){ playCorrect(); r.solved=true; updateProgress(); feedback.textContent='¡Correcto! El regalo está en la lavadora.'; washingAudio.pause(); washingAudio.currentTime = 0; enableNextButton(); } else { playIncorrect(); feedback.textContent='Respuesta incorrecta'; } });
+answerSoundBtn.addEventListener('click', ()=>{ const guess = (answerSoundInput.value||'').toLowerCase().trim(); const r = riddles[currentIndex]; if(guess === (r.answer||'').toLowerCase()){ playCorrect[...]
 
 // ----- Slider riddle (closet) -----
 let sliderInZone = false;
@@ -406,10 +416,10 @@ const bookEmojis = ['📘','📕','📗','📙'];
 let cardSymbols = [];
 let flipped = [];
 let matches = 0;
-function initializeMemoryGame(){ memoryBoard.innerHTML=''; memoryFeedback.textContent=''; flipped = []; matches = 0; cardSymbols = shuffle(bookEmojis.concat(bookEmojis)); cardSymbols.forEach((sym,i)=>{ const card = document.createElement('div'); card.className = 'memory-card'; card.dataset.symbol = sym; card.dataset.index = i; card.textContent = '📚'; card.addEventListener('click', ()=>flipCard(card)); memoryBoard.appendChild(card); }); }
+function initializeMemoryGame(){ memoryBoard.innerHTML=''; memoryFeedback.textContent=''; flipped = []; matches = 0; cardSymbols = shuffle(bookEmojis.concat(bookEmojis)); cardSymbols.forEach((sym,i)=>[...]
 function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [arr[i],arr[j]] = [arr[j],arr[i]]; } return arr; }
-function flipCard(card){ if(card.classList.contains('matched') || flipped.length === 2) return; card.textContent = card.dataset.symbol; card.classList.add('revealed'); flipped.push(card); if(flipped.length === 2){ setTimeout(checkMemoryMatch, 600); } }
-function checkMemoryMatch(){ const [a,b] = flipped; if(!a || !b){ flipped = []; return; } if(a.dataset.symbol === b.dataset.symbol){ a.classList.add('matched'); b.classList.add('matched'); a.dataset.revealed = 'true'; b.dataset.revealed = 'true'; matches++; playCorrect(); if(matches === bookEmojis.length){ memoryFeedback.textContent = '¡Has encontrado todos los pares! El regalo está en la estantería de libros.'; riddles[currentIndex].solved = true; updateProgress(); enableNextButton(); } } else { a.dataset.revealed = 'false'; b.dataset.revealed = 'false'; a.classList.remove('revealed'); b.classList.remove('revealed'); a.textContent = '📚'; b.textContent = '📚'; playIncorrect(); memoryFeedback.textContent = 'No coinciden, intenta de nuevo.'; } flipped = []; }
+function flipCard(card){ if(card.classList.contains('matched') || flipped.length === 2) return; card.textContent = card.dataset.symbol; card.classList.add('revealed'); flipped.push(card); if(flipped.l[...]
+function checkMemoryMatch(){ const [a,b] = flipped; if(!a || !b){ flipped = []; return; } if(a.dataset.symbol === b.dataset.symbol){ a.classList.add('matched'); b.classList.add('matched'); a.dataset.r[...]
 
 // ----- Puzzle -----
 function initializePuzzleBoard(){
@@ -621,4 +631,3 @@ document.addEventListener('DOMContentLoaded', ()=>{ updateProgress(); });
 </script>
 </body>
 </html>
-
