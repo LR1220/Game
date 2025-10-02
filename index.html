@@ -143,6 +143,7 @@ body::before{content:"";position:fixed;inset:0;background-image:url('https://img
 </div>
 
 <audio id="washing-audio" src="lavadora.mp3" preload="auto"></audio>
+<audio id="bg-music" src="background.mp3" preload="auto" loop></audio>
 
 <div id="final-overlay"><div id="final-box"><h2 id="final-title">¡FELICIDADES!</h2><p id="final-message">Has encontrado todos los regalos.</p><div style="margin-top:12px"><button id="close-final">Cerrar</button></div></div></div>
 
@@ -196,6 +197,7 @@ const puzzleFeedback = document.getElementById('puzzle-feedback');
 const checkPuzzleBtn = document.getElementById('check-puzzle-button');
 const resetPuzzleBtn = document.getElementById('reset-puzzle-button');
 const washingAudio = document.getElementById('washing-audio');
+const bgMusic = document.getElementById('bg-music');
 const feedback = document.getElementById('feedback');
 const finalOverlay = document.getElementById('final-overlay');
 const closeFinal = document.getElementById('close-final');
@@ -216,6 +218,48 @@ function playIncorrect(){
 }
 
 function playFinal(){ beep(880,0.08); setTimeout(()=>beep(1046,0.08),120); setTimeout(()=>beep(1318,0.12),260); }
+// ----- Ducking: bajar/subir volumen de la música de fondo mientras suena la lavadora -----
+let bgOriginalVolume = null;
+let bgFadeInterval = null;
+
+function fadeVolume(audio, from, to, duration = 300){
+  if(!audio) return;
+  if(bgFadeInterval){ clearInterval(bgFadeInterval); bgFadeInterval = null; }
+  const stepTime = 30; // ms por paso (suave)
+  const steps = Math.max(1, Math.floor(duration / stepTime));
+  const delta = (to - from) / steps;
+  let currentStep = 0;
+  audio.volume = Math.max(0, Math.min(1, from));
+  bgFadeInterval = setInterval(()=>{
+    currentStep++;
+    const v = from + delta * currentStep;
+    if(currentStep >= steps){
+      audio.volume = Math.max(0, Math.min(1, to));
+      clearInterval(bgFadeInterval);
+      bgFadeInterval = null;
+    } else {
+      audio.volume = Math.max(0, Math.min(1, v));
+    }
+  }, stepTime);
+}
+
+function duckBg(shouldDuck = true, duckLevel = 0.25, duration = 300){
+  // duckLevel: volumen objetivo (0..1) mientras dura el efecto
+  if(!bgMusic) return;
+  if(shouldDuck){
+    if(bgOriginalVolume === null) bgOriginalVolume = (typeof bgMusic.volume === 'number') ? bgMusic.volume : 1.0;
+    fadeVolume(bgMusic, bgMusic.volume, duckLevel, duration);
+  } else {
+    const restoreTo = (bgOriginalVolume !== null) ? bgOriginalVolume : 1.0;
+    fadeVolume(bgMusic, bgMusic.volume, restoreTo, duration);
+    // limpiar la copia del original pasado un tiempo para futuros duckings
+    setTimeout(()=>{ bgOriginalVolume = null; }, duration + 50);
+  }
+}
+// Duck automáticamente cuando la lavadora suena y restaurar cuando se pausa/termina
+washingAudio.addEventListener('play', ()=>{ duckBg(true, 0.25, 300); });
+washingAudio.addEventListener('pause', ()=>{ duckBg(false, 0.25, 300); });
+washingAudio.addEventListener('ended', ()=>{ duckBg(false, 0.25, 300); });
 
 // ----- Next button control -----
 function enableNextButton(){ nextRiddleBtn.style.display = 'inline-block'; }
