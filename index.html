@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>🕵️‍♂️El Misterio de los Sentidos — Juego Completo</title>
 <link rel="preload" as="audio" href="lavadora.mp3">
-<!-- 1. PRELOAD background.mp3 -->
 <link rel="preload" as="audio" href="background.mp3">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Special+Elite&display=swap" rel="stylesheet">
 <style>
@@ -145,7 +144,6 @@ body::before{content:"";position:fixed;inset:0;background-image:url('https://img
 </div>
 
 <audio id="washing-audio" src="lavadora.mp3" preload="auto"></audio>
-<!-- 1. NUEVO AUDIO background.mp3 -->
 <audio id="background-audio" src="background.mp3" preload="auto" loop></audio>
 
 <div id="final-overlay"><div id="final-box"><h2 id="final-title">¡FELICIDADES!</h2><p id="final-message">Has encontrado todos los regalos.</p><div style="margin-top:12px"><button id="close-final">Cer[...]
@@ -204,45 +202,26 @@ const feedback = document.getElementById('feedback');
 const finalOverlay = document.getElementById('final-overlay');
 const closeFinal = document.getElementById('close-final');
 const nextRiddleBtn = document.getElementById('next-riddle-button');
-// 1. NUEVO AUDIO DE FONDO
 const backgroundAudio = document.getElementById('background-audio');
 
-// ----- 1. CONTROL DE AUDIO DE FONDO -----
-// --- helpers para desbloquear audio en móviles y navegadores ---
+// Música de fondo: desbloqueo y volumen seguro
 let backgroundAudioReady = false;
 function attemptPlayBackgroundAudio(){
-  // Intenta reproducir el audio de fondo si no está ya listo
   if(backgroundAudioReady) return;
-  backgroundAudio.volume = 0.5; // volumen inicial
+  backgroundAudio.volume = 0.5;
   backgroundAudio.loop = true;
-  // Algunos navegadores bloquean el auto-play, pero lo intentamos
-  // con diferentes eventos y promesas
   const playPromise = backgroundAudio.play();
   if(playPromise && typeof playPromise.then === 'function'){
-    playPromise.then(()=>{
-      backgroundAudioReady = true;
-    }).catch(()=>{
-      // Si falla, lo intentaremos al interactuar
-      backgroundAudioReady = false;
-    });
-  }else{
-    // Si play no es promesa, lo marcamos como intentado
-    backgroundAudioReady = true;
-  }
+    playPromise.then(()=>{backgroundAudioReady = true;}).catch(()=>{backgroundAudioReady = false;});
+  }else{backgroundAudioReady = true;}
 }
-
-// Listeners para desbloquear audio en móviles y navegadores
 ['touchstart','click','keydown'].forEach(ev=>{
   window.addEventListener(ev, ()=>{ attemptPlayBackgroundAudio(); }, {passive:true, once:false});
 });
-
-// 1. También intentamos en el DOMContentLoaded
 document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(()=>{attemptPlayBackgroundAudio();},200); updateProgress(); });
 
-// 1. Al iniciar el juego, asegurar audio de fondo
+// Al iniciar/verificar juego, asegurar audio fondo
 startButton.addEventListener('click', ()=>{ startOverlay.style.display='none'; verificationContainer.style.display='block'; startCamera(); attemptPlayBackgroundAudio(); });
-
-// 1. Al pasar a la pantalla principal del juego, asegurar audio de fondo
 verifyButton.addEventListener('click', ()=>{
   stopCamera();
   verifyButton.style.display = 'none';
@@ -256,9 +235,7 @@ verifyButton.addEventListener('click', ()=>{
     attemptPlayBackgroundAudio();
   }, 2000);
 });
-
 function setBackgroundVolume(vol){
-  // 1. Controla el volumen del audio de fondo
   backgroundAudio.volume = Math.max(0, Math.min(1, vol));
 }
 
@@ -268,14 +245,12 @@ function ensureAudioCtx(){ if(!audioCtx){ try{ audioCtx = new (window.AudioConte
 function beep(freq, dur=0.12){ ensureAudioCtx(); if(!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type='sine'; o.frequency.value = freq; g.gain.value = 0[...]
 function playCorrect(){ 
   beep(880,0.12); 
-  if (navigator.vibrate) navigator.vibrate(120); // vibración corta
+  if (navigator.vibrate) navigator.vibrate(120);
 }
-
 function playIncorrect(){ 
   beep(220,0.12); 
-  if (navigator.vibrate) navigator.vibrate([120, 80, 120]); // vibración doble
+  if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
 }
-
 function playFinal(){ beep(880,0.08); setTimeout(()=>beep(1046,0.08),120); setTimeout(()=>beep(1318,0.12),260); }
 
 // ----- Next button control -----
@@ -285,17 +260,13 @@ nextRiddleBtn.addEventListener('click', ()=>{ nextRiddleBtn.style.display = 'non
 // ----- Start/verification -----
 async function startCamera(){
   if(currentStream){ stopCamera(); }
-
   const envConstraints = { video: { facingMode: { ideal: "environment" } }, audio: false };
-
   try{
     try {
       currentStream = await navigator.mediaDevices.getUserMedia(envConstraints);
     } catch (errEnv) {
-      console.warn('No se pudo abrir la cámara trasera por facingMode, intentando cualquier cámara...', errEnv);
       currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
     }
-
     verificationFeed.srcObject = currentStream;
     verificationFeed.style.display = 'block';
     verificationMessage.textContent = 'Cámara activada';
@@ -308,7 +279,6 @@ async function startCamera(){
     console.warn(err);
   }
 }
-
 function stopCamera(){ if(currentStream){ currentStream.getTracks().forEach(t=>t.stop()); currentStream=null; verificationFeed.srcObject=null; verificationFeed.style.display='none'; } }
 
 // ----- Progress -----
@@ -318,19 +288,16 @@ function updateProgress(forceFull=false){ const solved = riddles.filter(r=>r.sol
 function loadRiddle(idx){
   washingAudio.pause(); washingAudio.currentTime = 0;
   nextRiddleBtn.style.display = 'none';
-
   if(idx>=riddles.length){ updateProgress(true); playFinal(); setTimeout(()=>showFinal(),700); return; }
   const r = riddles[idx];
   riddleText.textContent = r.riddle;
   feedback.textContent = '';
-
   gameControls.style.display='none';
   floorPlanContainer.style.display='none';
   riddle2Interaction.style.display='none';
   riddle3Interaction.style.display='none';
   document.getElementById('riddle-bookshelf-memory').style.display='none';
   puzzleContainer.style.display='none';
-
   if(r.interaction==='hotspot'){ floorPlanContainer.style.display='block'; hotspotHandled=false; bedHotspot.classList.remove('active'); }
   if(r.interaction==='sound'){ riddle2Interaction.style.display='block'; }
   if(r.interaction==='slider'){
@@ -353,12 +320,10 @@ bedHotspot.addEventListener('click', ()=>handleHotspot(true));
 bedHotspot.addEventListener('touchstart', ()=>handleHotspot(true));
 floorPlanContainer.addEventListener('touchstart', function(e){ if(riddles[currentIndex] && riddles[currentIndex].interaction==='hotspot'){ const t = e.touches[0]; const rect = bedHotspot.getBoundingCl[...]
 
-// ----- 1. CONTROL DE SONIDO DE FONDO Y LAVADORA -----
+// ----- Volumen fondo y lavadora -----
 playSoundBtn.addEventListener('click', ()=>{
-  // Bajar volumen de fondo antes de reproducir lavadora
   setBackgroundVolume(0.10);
   washingAudio.currentTime = 0;
-  // Intenta reproducir lavadora, y si se bloquea, lo intenta de nuevo tras interacción
   const p = washingAudio.play();
   if(p && typeof p.catch === 'function') p.catch(()=>{
     window.addEventListener('click', ()=>{ washingAudio.play(); }, {once:true});
@@ -369,15 +334,11 @@ stopSoundBtn.addEventListener('click', ()=>{
   washingAudio.pause();
   washingAudio.currentTime = 0;
   feedback.textContent = 'Audio detenido.';
-  // Restaurar volumen de fondo cuando se detenga lavadora
   setBackgroundVolume(0.5);
 });
 washingAudio.addEventListener('ended', ()=>{
-  // Restaurar volumen de fondo al terminar lavadora
   setBackgroundVolume(0.5);
 });
-
-// Si el usuario responde, restaurar volumen (si lavadora sigue, lo mantiene bajo)
 answerSoundBtn.addEventListener('click', ()=>{
   const guess = (answerSoundInput.value||'').toLowerCase().trim();
   const r = riddles[currentIndex];
@@ -421,7 +382,6 @@ secretSlider.addEventListener('input', (e)=>{
     }
   }
 });
-
 answerButtonSlider.addEventListener('click', ()=>{
   const r = riddles[currentIndex];
   const guess = (answerInputSlider.value||'').toLowerCase().trim();
@@ -446,7 +406,6 @@ function checkMemoryMatch(){ const [a,b] = flipped; if(!a || !b){ flipped = []; 
 function initializePuzzleBoard(){
   puzzleBoard.innerHTML = '';
   puzzlePiecesContainer.innerHTML = '';
-  // 2. NUEVA VARIABLE PARA CONTROLAR SI EL ROMPECABEZAS ESTA COMPLETO
   window.puzzleCompleted = false;
   for(let i=1;i<=9;i++){
     const slot = document.createElement('div');
@@ -456,7 +415,6 @@ function initializePuzzleBoard(){
     slot.addEventListener('drop', dropPuzzle);
     puzzleBoard.appendChild(slot);
   }
-
   const pieces = [];
   for(let i=1;i<=9;i++){
     const p = document.createElement('div');
@@ -467,17 +425,13 @@ function initializePuzzleBoard(){
     pieces.push(p);
     p.addEventListener('touchstart', onTouchStart, {passive:false});
   }
-
   while(pieces.length){ const j = Math.floor(Math.random()*pieces.length); puzzlePiecesContainer.appendChild(pieces.splice(j,1)[0]); }
   checkPuzzleBtn.style.display = 'none';
   checkPuzzleBtn.disabled = false;
   resetPuzzleBtn.disabled = false;
   puzzlePiecesContainer.style.pointerEvents = '';
-  // 2. RESETEAR puzzleCompleted
   window.puzzleCompleted = false;
 }
-
-// 2. MODIFICADO: dropPuzzle
 function dropPuzzle(e){ 
   e.preventDefault(); 
   const id = e.dataTransfer.getData('text/plain'); 
@@ -486,19 +440,15 @@ function dropPuzzle(e){
   if(!target.classList.contains('puzzle-slot')) target = target.closest('.puzzle-slot'); 
   if(target && target.children.length === 0){ 
     target.appendChild(piece); 
-    // 2. VERIFICAR SI ESTÁ COMPLETO Y MOSTRAR BOTÓN (aunque ya esté resuelto)
     if(checkIfPuzzleIsCompleted()){
       checkPuzzleBtn.style.display = 'inline-block';
     }else{
-      // Si no está completo, mostrar botón solo si hay al menos una pieza en el tablero
       const filled = Array.from(puzzleBoard.children).filter(s=>s.children.length>0).length; 
       if(filled > 0) checkPuzzleBtn.style.display = 'inline-block'; 
       else checkPuzzleBtn.style.display = 'none'; 
     }
   } 
 }
-
-// 2. NUEVA FUNCION PARA COMPROBAR SI EL PUZZLE ESTÁ COMPLETO
 function checkIfPuzzleIsCompleted(){
   const slots = puzzleBoard.querySelectorAll('.puzzle-slot');
   for(let i=0;i<9;i++){
@@ -510,11 +460,8 @@ function checkIfPuzzleIsCompleted(){
   }
   return true;
 }
-
 checkPuzzleBtn.addEventListener('click', ()=>{
-  // 2. Si ya estaba completado, no volver a mostrar pantalla final
   if(window.puzzleCompleted) return;
-
   const slots = puzzleBoard.querySelectorAll('.puzzle-slot');
   let ok = true;
   for(let i=0;i<9;i++){
@@ -525,73 +472,56 @@ checkPuzzleBtn.addEventListener('click', ()=>{
       break;
     }
   }
-
   if(ok){
     puzzleFeedback.textContent = '¡Rompecabezas resuelto! El regalo está oculto en una de las macetas de la casa.';
     playCorrect();
     riddles[currentIndex].solved = true;
     updateProgress();
-
     checkPuzzleBtn.disabled = true;
     resetPuzzleBtn.disabled = true;
     puzzlePiecesContainer.style.pointerEvents = 'none';
-
-    // 2. MARCAR COMO COMPLETADO
     window.puzzleCompleted = true;
-
     setTimeout(()=>{
       updateProgress(true);
       playFinal();
       showFinal();
     }, 3000);
-
   } else {
     puzzleFeedback.textContent = 'El orden no es correcto. ¡Intenta de nuevo!';
     playIncorrect();
   }
 });
-
 resetPuzzleBtn.addEventListener('click', ()=>{ initializePuzzleBoard(); puzzleFeedback.textContent = ''; });
 
 // ----- Soporte táctil para el rompecabezas -----
 let draggingPiece = null;
 let startX = 0, startY = 0;
 let currentX = 0, currentY = 0;
-
 function onTouchStart(e) {
   e.preventDefault();
   draggingPiece = e.target;
-
   const touch = e.touches[0];
   startX = touch.clientX;
   startY = touch.clientY;
-
   draggingPiece.style.transition = "none";
   draggingPiece.style.zIndex = "1000";
-
   document.addEventListener('touchmove', onTouchMove, {passive:false});
   document.addEventListener('touchend', onTouchEnd, {passive:false});
 }
-
 function onTouchMove(e) {
   if (!draggingPiece) return;
   const touch = e.touches[0];
   currentX = touch.clientX - startX;
   currentY = touch.clientY - startY;
-
   draggingPiece.style.transform = `translate(${currentX}px, ${currentY}px)`;
 }
-
 function onTouchEnd(e) {
   if (!draggingPiece) return;
-
   const touch = e.changedTouches[0];
   const x = touch.clientX;
   const y = touch.clientY;
-
   const slots = document.querySelectorAll('.puzzle-slot');
   let dropped = false;
-
   slots.forEach(slot => {
     const rect = slot.getBoundingClientRect();
     if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
@@ -604,23 +534,18 @@ function onTouchEnd(e) {
       }
     }
   });
-
   if (!dropped) {
     document.getElementById('puzzle-pieces-container').appendChild(draggingPiece);
     draggingPiece.style.transform = "none";
     draggingPiece.style.transition = "transform 0.2s ease";
     draggingPiece.style.zIndex = "auto";
   }
-
   draggingPiece = null;
   document.removeEventListener('touchmove', onTouchMove);
   document.removeEventListener('touchend', onTouchEnd);
-
-  // 2. VERIFICAR SI ESTÁ COMPLETO Y MOSTRAR BOTÓN (aunque ya esté resuelto)
   if(checkIfPuzzleIsCompleted()){
     checkPuzzleBtn.style.display = 'inline-block';
   }else{
-    // Si no está completo, mostrar botón solo si hay al menos una pieza en el tablero
     const filled = Array.from(puzzleBoard.children).filter(s=>s.children.length>0).length; 
     if(filled > 0) checkPuzzleBtn.style.display = 'inline-block'; 
     else checkPuzzleBtn.style.display = 'none'; 
@@ -629,9 +554,7 @@ function onTouchEnd(e) {
 
 // ----- Final overlay -----
 function showFinal(){
-  // ⬇️ Detener música de fondo antes de mostrar felicitación
   if (backgroundAudio) { backgroundAudio.pause(); backgroundAudio.currentTime = 0; }
-
   finalOverlay.style.display = 'flex';
   const canvas = document.createElement('canvas');
   canvas.id = "confetti-canvas";
@@ -643,11 +566,9 @@ function showFinal(){
   canvas.style.pointerEvents = "none";
   canvas.style.zIndex = "10000";
   document.body.appendChild(canvas);
-
   const ctx = canvas.getContext('2d');
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
-
   const pieces = new Array(120).fill().map(()=>({
     x: Math.random()*canvas.width,
     y: Math.random()*canvas.height,
@@ -658,7 +579,6 @@ function showFinal(){
     vx: -2+Math.random()*4,
     angle: Math.random()*2*Math.PI
   }));
-
   function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     for(let p of pieces){
@@ -679,7 +599,6 @@ function showFinal(){
   }
   draw();
 }
-
 closeFinal.addEventListener('click', ()=>{ finalOverlay.style.display = 'none'; location.reload(); });
 
 </script>
