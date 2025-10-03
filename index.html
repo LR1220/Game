@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>🕵️‍♂️🔎El Misterio de los Sentidos — Juego Completo</title>
 <link rel="preload" as="audio" href="lavadora.mp3">
-<link rel="preload" as="audio" href="background.mp3">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Special+Elite&display=swap" rel="stylesheet">
 <style>
 :root{--accent:#b80000;--accent-dark:#9e0000;--bg:#1c1c1c;--panel:rgba(28,28,28,0.95);--success:#2ecc71}
@@ -77,22 +76,29 @@ body::before{content:"";position:fixed;inset:0;background-image:url('https://img
   <div style="margin-top:14px; text-align:center;">
     <button id="verify-button">Verificar carnet</button>
   </div>
+
+  <!-- Si quieres mostrar mensajes adicionales -->
   <p id="verification-feedback" class="feedback"></p>
 </div>
+
+
 
 <div class="container" id="game-container" style="display:none;">
   <h1>🕵️‍♂️ El Misterio de los Sentidos</h1>
   <p class="subtitle">Recupera los regalos antes de que sea demasiado tarde</p>
   <div class="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
   <p id="riddle-text"></p>
+
   <div id="game-controls" class="row" style="display:none;margin-top:8px">
     <input type="text" id="answer-input" placeholder="Escribe el nombre del objeto" />
     <button id="answer-button">Resolver Acertijo</button>
   </div>
+
   <div id="floor-plan-container">
     <img id="floor-plan" src="https://static.planner5d.com/assets/images/recognition/recognition-how-work-1-1.webp?ux=6.307.5" alt="Plano" />
     <div class="hotspot" id="bed-hotspot" aria-hidden="true"></div>
   </div>
+
   <div id="riddle-2-interaction" style="display:none;margin-top:12px">
     <p>Usa tu oído: escucha y descubre dónde está el regalo</p>
     <div class="row" style="margin-top:8px">
@@ -102,6 +108,7 @@ body::before{content:"";position:fixed;inset:0;background-image:url('https://img
       <button id="answer-sound-button">Resolver</button>
     </div>
   </div>
+
   <div id="riddle-3-interaction" style="display:none">
     <p>Mueve el deslizador a la posición exacta para revelar la palabra oculta</p>
     <input id="secret-slider" type="range" min="0" max="100" value="0" />
@@ -111,30 +118,33 @@ body::before{content:"";position:fixed;inset:0;background-image:url('https://img
       <button id="answer-button-slider">Resolver</button>
     </div>
   </div>
+
   <div id="riddle-bookshelf-memory" style="display:none; margin-top:12px;">
     <p class="subtitle">Encuentra los pares de libros iguales</p>
     <div id="memory-board"></div>
     <p id="memory-feedback" class="feedback"></p>
   </div>
+
   <div id="puzzle-container" style="display:none; margin-top:12px">
     <div id="puzzle-board"></div>
     <div id="puzzle-pieces-container"></div>
     <p id="puzzle-feedback" class="feedback"></p>
     <div style="display:flex;justify-content:center;margin-top:8px;gap:12px" aria-label="Controles del rompecabezas">
-      <button id="check-puzzle-button" style="display:none">Verificar Rompecabezas</button>
-      <button id="reset-puzzle-button">Reiniciar Rompecabezas</button>
-    </div>
+  <button id="check-puzzle-button" style="display:none">Verificar Rompecabezas</button>
+  <button id="reset-puzzle-button">Reiniciar Rompecabezas</button>
+</div>
   </div>
+
   <div style="display:flex;justify-content:center;margin-top:14px">
     <button id="next-riddle-button" style="display:none;">Siguiente reto</button>
   </div>
+
   <p id="feedback" class="feedback"></p>
 </div>
 
 <audio id="washing-audio" src="lavadora.mp3" preload="auto"></audio>
-<audio id="background-audio" src="background.mp3" preload="auto" loop></audio>
 
-<div id="final-overlay"><div id="final-box"><h2 id="final-title">¡FELICIDADES!</h2><p id="final-message">Has encontrado todos los regalos.</p><div style="margin-top:12px"><button id="close-final">Cerrar</button></div></div></div>
+<div id="final-overlay"><div id="final-box"><h2 id="final-title">¡FELICIDADES!</h2><p id="final-message">Has encontrado todos los regalos.</p><div style="margin-top:12px"><button id="close-final">Cer[...]
 
 <script>
 // ----- Configuración de acertijos -----
@@ -149,7 +159,7 @@ const riddles = [
 let currentIndex = 0;
 let currentStream = null;
 let hotspotHandled = false;
-let puzzleWasFull = false;
+let puzzleWasFull = false; // ----------- NUEVA VARIABLE GLOBAL ------------
 
 // ----- DOM refs -----
 const startOverlay = document.getElementById('start-overlay');
@@ -187,7 +197,6 @@ const puzzleFeedback = document.getElementById('puzzle-feedback');
 const checkPuzzleBtn = document.getElementById('check-puzzle-button');
 const resetPuzzleBtn = document.getElementById('reset-puzzle-button');
 const washingAudio = document.getElementById('washing-audio');
-const backgroundAudio = document.getElementById('background-audio');
 const feedback = document.getElementById('feedback');
 const finalOverlay = document.getElementById('final-overlay');
 const closeFinal = document.getElementById('close-final');
@@ -196,85 +205,56 @@ const nextRiddleBtn = document.getElementById('next-riddle-button');
 // ----- Audio helpers -----
 let audioCtx = null;
 function ensureAudioCtx(){ if(!audioCtx){ try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audioCtx = null; } } }
-function beep(freq, dur=0.12){ ensureAudioCtx(); if(!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type='sine'; o.frequency.value = freq; g.gain.value = 0.12; o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=>{o.stop();g.disconnect()}, dur*1000);}
-function playCorrect(){ beep(880,0.12); if (navigator.vibrate) navigator.vibrate(120);}
-function playIncorrect(){ beep(220,0.12); if (navigator.vibrate) navigator.vibrate([120, 80, 120]);}
+function beep(freq, dur=0.12){ ensureAudioCtx(); if(!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type='sine'; o.frequency.value = freq; g.gain.value = 0[...]
+function playCorrect(){ 
+  beep(880,0.12); 
+  if (navigator.vibrate) navigator.vibrate(120); // vibración corta
+}
+
+function playIncorrect(){ 
+  beep(220,0.12); 
+  if (navigator.vibrate) navigator.vibrate([120, 80, 120]); // vibración doble
+}
+
 function playFinal(){ beep(880,0.08); setTimeout(()=>beep(1046,0.08),120); setTimeout(()=>beep(1318,0.12),260); }
-
-// ----- Música de fondo -----
-let backgroundAudioStarted = false;
-
-// Helper para iniciar música de fondo, con reintentos y desbloqueo
-function startBackgroundMusic() {
-  if (backgroundAudioStarted) return;
-  backgroundAudio.currentTime = 0;
-  backgroundAudio.volume = 0.9;
-  const playPromise = backgroundAudio.play();
-  if (playPromise !== undefined) {
-    playPromise
-      .then(() => { backgroundAudioStarted = true; })
-      .catch(() => {
-        backgroundAudioStarted = false;
-        document.body.addEventListener('pointerdown', unlockBackgroundAudio, { once: true });
-        document.body.addEventListener('keydown', unlockBackgroundAudio, { once: true });
-      });
-  }
-}
-function unlockBackgroundAudio() {
-  backgroundAudio.play()
-    .then(() => { backgroundAudioStarted = true; })
-    .catch(() => {});
-}
-function stopBackgroundMusic() {
-  backgroundAudio.pause();
-  backgroundAudio.currentTime = 0;
-  backgroundAudioStarted = false;
-}
-
-// Al cargar, el fondo está pausado
-document.addEventListener('DOMContentLoaded', () => {
-  backgroundAudio.volume = 0.9;
-  backgroundAudio.pause();
-  backgroundAudio.currentTime = 0;
-});
-
-// Inicia música al dar "comenzar misión"
-startButton.addEventListener('click', ()=>{ 
-  startOverlay.style.display='none'; 
-  verificationContainer.style.display='block'; 
-  startCamera();
-  startBackgroundMusic();
-});
-
-// También inicia música al desbloquear tras verificación
-verifyButton.addEventListener('click', ()=>{
-  stopCamera();
-  verifyButton.style.display = 'none';
-  verificationMessage.textContent = "Bienvenido a tu misión detective Carlos alias Pollito 🐥";
-  verificationMessage.style.color = 'var(--success)';
-  verificationFeedback.textContent = '';
-  setTimeout(()=>{
-    verificationContainer.style.display='none';
-    gameContainer.style.display='block';
-    loadRiddle(currentIndex);
-    startBackgroundMusic();
-  }, 2000);
-});
 
 // ----- Next button control -----
 function enableNextButton(){ nextRiddleBtn.style.display = 'inline-block'; }
 nextRiddleBtn.addEventListener('click', ()=>{ nextRiddleBtn.style.display = 'none'; currentIndex++; loadRiddle(currentIndex); });
 
 // ----- Start/verification -----
+startButton.addEventListener('click', ()=>{ startOverlay.style.display='none'; verificationContainer.style.display='block'; startCamera(); });
+verifyButton.addEventListener('click', ()=>{
+  stopCamera();
+verifyButton.style.display = 'none';
+  // show welcome message before proceeding to first riddle
+  verificationMessage.textContent = "Bienvenido a tu misión detective Carlos alias Pollito 🐥";
+  verificationMessage.style.color = 'var(--success)';
+  verificationFeedback.textContent = '';
+  // wait 4 seconds to let the player read
+  setTimeout(()=>{
+    verificationContainer.style.display='none';
+    gameContainer.style.display='block';
+    loadRiddle(currentIndex);
+  }, 2000);
+});
+
 async function startCamera(){
   if(currentStream){ stopCamera(); }
+
+  // Primero intentamos solicitar específicamente la cámara trasera (ideal)
   const envConstraints = { video: { facingMode: { ideal: "environment" } }, audio: false };
+
   try{
     try {
+      // intentamos con facingMode ideal -> en la mayoría de móviles abrirá la trasera
       currentStream = await navigator.mediaDevices.getUserMedia(envConstraints);
     } catch (errEnv) {
+      // fallback si facingMode no está soportado o falla: pedimos cualquier cámara
+      console.warn('No se pudo abrir la cámara trasera por facingMode, intentando cualquier cámara...', errEnv);
       currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
     }
+
     verificationFeed.srcObject = currentStream;
     verificationFeed.style.display = 'block';
     verificationMessage.textContent = 'Cámara activada';
@@ -287,6 +267,7 @@ async function startCamera(){
     console.warn(err);
   }
 }
+
 function stopCamera(){ if(currentStream){ currentStream.getTracks().forEach(t=>t.stop()); currentStream=null; verificationFeed.srcObject=null; verificationFeed.style.display='none'; } }
 
 // ----- Progress -----
@@ -294,18 +275,23 @@ function updateProgress(forceFull=false){ const solved = riddles.filter(r=>r.sol
 
 // ----- Load riddle -----
 function loadRiddle(idx){
+  // stop any audio and hide next button when loading a new riddle
   washingAudio.pause(); washingAudio.currentTime = 0;
   nextRiddleBtn.style.display = 'none';
+
   if(idx>=riddles.length){ updateProgress(true); playFinal(); setTimeout(()=>showFinal(),700); return; }
   const r = riddles[idx];
   riddleText.textContent = r.riddle;
   feedback.textContent = '';
+
+  // hide all interactions by default
   gameControls.style.display='none';
   floorPlanContainer.style.display='none';
   riddle2Interaction.style.display='none';
   riddle3Interaction.style.display='none';
   document.getElementById('riddle-bookshelf-memory').style.display='none';
   puzzleContainer.style.display='none';
+
   if(r.interaction==='hotspot'){ floorPlanContainer.style.display='block'; hotspotHandled=false; bedHotspot.classList.remove('active'); }
   if(r.interaction==='sound'){ riddle2Interaction.style.display='block'; }
   if(r.interaction==='slider'){
@@ -322,31 +308,22 @@ function loadRiddle(idx){
 }
 
 // ----- Hotspot (bed) -----
-function handleHotspot(isOver){ const r = riddles[currentIndex]; if(r.interaction!=='hotspot' || r.solved || hotspotHandled) return; if(isOver){ hotspotHandled=true; bedHotspot.classList.add('active'); r.solved=true; updateProgress(); feedback.textContent='¡Correcto! El regalo está en la cama.'; playCorrect(); enableNextButton(); } }
+function handleHotspot(isOver){ const r = riddles[currentIndex]; if(r.interaction!=='hotspot' || r.solved || hotspotHandled) return; if(isOver){ hotspotHandled=true; bedHotspot.classList.add('active')[...]
+// use pointer events for reliable hover detection (mouse & touch pointers)
 bedHotspot.addEventListener('pointerenter', ()=>handleHotspot(true));
 bedHotspot.addEventListener('click', ()=>handleHotspot(true));
 bedHotspot.addEventListener('touchstart', ()=>handleHotspot(true));
-floorPlanContainer.addEventListener('touchstart', function(e){ if(riddles[currentIndex] && riddles[currentIndex].interaction==='hotspot'){ const t = e.touches[0]; const rect = bedHotspot.getBoundingClientRect(); if(t.clientX>=rect.left && t.clientX<=rect.right && t.clientY>=rect.top && t.clientY<=rect.bottom){ handleHotspot(true); } }});
+// keep touchstart detection on container but DO NOT require click; the pointer events above will fire on touch-capable browsers that support pointer events
+floorPlanContainer.addEventListener('touchstart', function(e){ if(riddles[currentIndex] && riddles[currentIndex].interaction==='hotspot'){ const t = e.touches[0]; const rect = bedHotspot.getBoundingCl[...]
 
 // ----- Sound riddle -----
-playSoundBtn.addEventListener('click', ()=>{
-  try { backgroundAudio.volume = 0.3; } catch(e){}
-  washingAudio.currentTime = 0; 
-  const p = washingAudio.play(); 
-  if(p && typeof p.catch==='function') p.catch(()=>{});
-});
-stopSoundBtn.addEventListener('click', ()=>{
-  washingAudio.pause(); washingAudio.currentTime = 0; feedback.textContent = 'Audio detenido.';
-  try { backgroundAudio.volume = 0.9; } catch(e){}
-});
-washingAudio.addEventListener('ended', ()=>{
-  try { backgroundAudio.volume = 0.9; } catch(e){}
-});
-answerSoundBtn.addEventListener('click', ()=>{ const guess = (answerSoundInput.value||'').toLowerCase().trim(); const r = riddles[currentIndex]; if(guess === (r.answer||'').toLowerCase()){ playCorrect(); r.solved=true; updateProgress(); feedback.textContent='¡Correcto! El regalo está en la lavadora.'; enableNextButton(); } else { playIncorrect(); feedback.textContent='Respuesta incorrecta'; } });
+playSoundBtn.addEventListener('click', ()=>{ washingAudio.currentTime = 0; const p = washingAudio.play(); if(p && typeof p.catch==='function') p.catch(()=>{}); });
+stopSoundBtn.addEventListener('click', ()=>{ washingAudio.pause(); washingAudio.currentTime = 0; feedback.textContent = 'Audio detenido.'; });
+answerSoundBtn.addEventListener('click', ()=>{ const guess = (answerSoundInput.value||'').toLowerCase().trim(); const r = riddles[currentIndex]; if(guess === (r.answer||'').toLowerCase()){ playCorrect[...]
 
 // ----- Slider riddle (closet) -----
 let sliderInZone = false;
-const SLIDER_TOLERANCE = 1;
+const SLIDER_TOLERANCE = 1; // +/- value
 secretSlider.addEventListener('input', (e)=>{
   const v = parseInt(e.target.value,10);
   sliderValueEl.textContent = v;
@@ -369,6 +346,8 @@ secretSlider.addEventListener('input', (e)=>{
     }
   }
 });
+
+// Respuesta única para el closet (usa la caja #answer-input-slider)
 answerButtonSlider.addEventListener('click', ()=>{
   const r = riddles[currentIndex];
   const guess = (answerInputSlider.value||'').toLowerCase().trim();
@@ -384,10 +363,10 @@ const bookEmojis = ['📘','📕','📗','📙'];
 let cardSymbols = [];
 let flipped = [];
 let matches = 0;
-function initializeMemoryGame(){ memoryBoard.innerHTML=''; memoryFeedback.textContent=''; flipped = []; matches = 0; cardSymbols = shuffle(bookEmojis.concat(bookEmojis)); cardSymbols.forEach((sym,i)=>{ const c = document.createElement('div'); c.className = 'memory-card'; c.dataset.symbol = sym; c.dataset.revealed = 'false'; c.textContent = ''; c.addEventListener('click',()=>flipCard(c)); memoryBoard.appendChild(c); }); }
+function initializeMemoryGame(){ memoryBoard.innerHTML=''; memoryFeedback.textContent=''; flipped = []; matches = 0; cardSymbols = shuffle(bookEmojis.concat(bookEmojis)); cardSymbols.forEach((sym,i)=>[...]
 function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [arr[i],arr[j]] = [arr[j],arr[i]]; } return arr; }
-function flipCard(card){ if(card.classList.contains('matched') || flipped.length === 2) return; card.textContent = card.dataset.symbol; card.classList.add('revealed'); flipped.push(card); if(flipped.length === 2) setTimeout(checkMemoryMatch,600); }
-function checkMemoryMatch(){ const [a,b] = flipped; if(!a || !b){ flipped = []; return; } if(a.dataset.symbol === b.dataset.symbol){ a.classList.add('matched'); b.classList.add('matched'); a.dataset.revealed = b.dataset.revealed = 'true'; matches++; playCorrect(); if(matches === bookEmojis.length){ riddles[currentIndex].solved = true; updateProgress(); memoryFeedback.textContent = '¡Correcto! El regalo está en el librero.'; enableNextButton(); } } else { setTimeout(()=>{a.textContent='';b.textContent='';a.classList.remove('revealed');b.classList.remove('revealed');},450); playIncorrect(); } flipped = []; }
+function flipCard(card){ if(card.classList.contains('matched') || flipped.length === 2) return; card.textContent = card.dataset.symbol; card.classList.add('revealed'); flipped.push(card); if(flipped.l[...]
+function checkMemoryMatch(){ const [a,b] = flipped; if(!a || !b){ flipped = []; return; } if(a.dataset.symbol === b.dataset.symbol){ a.classList.add('matched'); b.classList.add('matched'); a.dataset.r[...]
 
 // ----- Puzzle -----
 function initializePuzzleBoard(){
@@ -401,6 +380,7 @@ function initializePuzzleBoard(){
     slot.addEventListener('drop', dropPuzzle);
     puzzleBoard.appendChild(slot);
   }
+
   const pieces = [];
   for(let i=1;i<=9;i++){
     const p = document.createElement('div');
@@ -409,11 +389,13 @@ function initializePuzzleBoard(){
     p.draggable = true;
     p.addEventListener('dragstart', e=>e.dataTransfer.setData('text/plain', e.target.id));
     pieces.push(p);
-    p.addEventListener('touchstart', onTouchStart, {passive:false});
+// soporte táctil
+p.addEventListener('touchstart', onTouchStart, {passive:false});
   }
+
   while(pieces.length){ const j = Math.floor(Math.random()*pieces.length); puzzlePiecesContainer.appendChild(pieces.splice(j,1)[0]); }
   checkPuzzleBtn.style.display = 'none';
-  puzzleWasFull = false;
+  puzzleWasFull = false; // ----------- REINICIA LA BANDERA AL REINICIAR EL TABLERO -----------
 }
 function dropPuzzle(e){ 
   e.preventDefault(); 
@@ -423,6 +405,7 @@ function dropPuzzle(e){
   if(!target.classList.contains('puzzle-slot')) target = target.closest('.puzzle-slot'); 
   if(target && target.children.length === 0){ 
     target.appendChild(piece); 
+    // ----------- NUEVO BLOQUE DE CONTROL DE BOTÓN VERIFICAR -----------
     const filled = Array.from(puzzleBoard.children).filter(s=>s.children.length>0).length;
     if (filled === 9) {
       checkPuzzleBtn.style.display = 'inline-block';
@@ -434,8 +417,10 @@ function dropPuzzle(e){
     } else {
       checkPuzzleBtn.style.display = 'none';
     }
-  }
+    // ------------------------------------------------------------------
+  } 
 }
+
 checkPuzzleBtn.addEventListener('click', ()=>{
   const slots = puzzleBoard.querySelectorAll('.puzzle-slot');
   let ok = true;
@@ -447,68 +432,92 @@ checkPuzzleBtn.addEventListener('click', ()=>{
       break;
     }
   }
+
   if(ok){
+    // Mensaje especial que pediste
     puzzleFeedback.textContent = '¡Rompecabezas resuelto! El regalo está oculto en una de las macetas de la casa.';
     playCorrect();
     riddles[currentIndex].solved = true;
     updateProgress();
+
+    // Deshabilitar controles para evitar que muevan piezas durante la espera
     checkPuzzleBtn.disabled = true;
     resetPuzzleBtn.disabled = true;
     puzzlePiecesContainer.style.pointerEvents = 'none';
+
+    // Mantener la pantalla 3 segundos y luego pasar a la pantalla final
     setTimeout(()=>{
+      // Marcar progreso completo y reproducir tono final
       updateProgress(true);
       playFinal();
-      showFinal();
+      showFinal(); // muestra el overlay final "¡FELICIDADES!"
     }, 3000);
+
   } else {
     puzzleFeedback.textContent = 'El orden no es correcto. ¡Intenta de nuevo!';
     playIncorrect();
   }
 });
+
 resetPuzzleBtn.addEventListener('click', ()=>{ 
   initializePuzzleBoard(); 
   puzzleFeedback.textContent = ''; 
-  puzzleWasFull = false;
+  puzzleWasFull = false; // ----------- REINICIA LA BANDERA AL REINICIAR EL TABLERO -----------
 });
 
 // ----- Soporte táctil para el rompecabezas -----
+// ----- Soporte táctil optimizado -----
 let draggingPiece = null;
 let startX = 0, startY = 0;
 let currentX = 0, currentY = 0;
+
 function onTouchStart(e) {
   e.preventDefault();
   draggingPiece = e.target;
+
   const touch = e.touches[0];
   startX = touch.clientX;
   startY = touch.clientY;
+
+  // reset transform al iniciar
   draggingPiece.style.transition = "none";
   draggingPiece.style.zIndex = "1000";
+
   document.addEventListener('touchmove', onTouchMove, {passive:false});
   document.addEventListener('touchend', onTouchEnd, {passive:false});
 }
+
 function onTouchMove(e) {
   if (!draggingPiece) return;
   const touch = e.touches[0];
   currentX = touch.clientX - startX;
   currentY = touch.clientY - startY;
+
+  // mover con transform para que siga el dedo exactamente
   draggingPiece.style.transform = `translate(${currentX}px, ${currentY}px)`;
 }
+
 function onTouchEnd(e) {
   if (!draggingPiece) return;
+
   const touch = e.changedTouches[0];
   const x = touch.clientX;
   const y = touch.clientY;
+
   const slots = document.querySelectorAll('.puzzle-slot');
   let dropped = false;
+
   slots.forEach(slot => {
     const rect = slot.getBoundingClientRect();
     if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
       if (slot.children.length === 0) {
         slot.appendChild(draggingPiece);
-        draggingPiece.style.transform = "none";
+        draggingPiece.style.transform = "none";  // quitar movimiento
         draggingPiece.style.transition = "transform 0.2s ease";
         draggingPiece.style.zIndex = "auto";
         dropped = true;
+
+        // ----------- NUEVO BLOQUE DE CONTROL DE BOTÓN VERIFICAR TAMBIÉN PARA TOUCH -----------
         const filled = Array.from(puzzleBoard.children).filter(s=>s.children.length>0).length;
         if (filled === 9) {
           checkPuzzleBtn.style.display = 'inline-block';
@@ -520,24 +529,30 @@ function onTouchEnd(e) {
         } else {
           checkPuzzleBtn.style.display = 'none';
         }
+        // ------------------------------------------------------------------
       }
     }
   });
+
   if (!dropped) {
+    // regresar al contenedor original
     document.getElementById('puzzle-pieces-container').appendChild(draggingPiece);
     draggingPiece.style.transform = "none";
     draggingPiece.style.transition = "transform 0.2s ease";
     draggingPiece.style.zIndex = "auto";
   }
+
   draggingPiece = null;
   document.removeEventListener('touchmove', onTouchMove);
   document.removeEventListener('touchend', onTouchEnd);
 }
 
+
 // ----- Final overlay -----
 function showFinal(){
   finalOverlay.style.display = 'flex';
-  stopBackgroundMusic(); // DETIENE LA MÚSICA DE FONDO AL FINAL
+
+  // Agregar canvas de confeti
   const canvas = document.createElement('canvas');
   canvas.id = "confetti-canvas";
   canvas.style.position = "fixed";
@@ -548,9 +563,11 @@ function showFinal(){
   canvas.style.pointerEvents = "none";
   canvas.style.zIndex = "10000";
   document.body.appendChild(canvas);
+
   const ctx = canvas.getContext('2d');
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+
   const pieces = new Array(120).fill().map(()=>({
     x: Math.random()*canvas.width,
     y: Math.random()*canvas.height,
@@ -561,6 +578,7 @@ function showFinal(){
     vx: -2+Math.random()*4,
     angle: Math.random()*2*Math.PI
   }));
+
   function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     for(let p of pieces){
@@ -581,7 +599,10 @@ function showFinal(){
   }
   draw();
 }
+
 closeFinal.addEventListener('click', ()=>{ finalOverlay.style.display = 'none'; location.reload(); });
+
+// ----- Init -----
 document.addEventListener('DOMContentLoaded', ()=>{ updateProgress(); });
 </script>
 </body>
