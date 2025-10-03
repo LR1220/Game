@@ -183,7 +183,7 @@ const backgroundAudio = document.getElementById('background-audio');
 let backgroundAudioReady = false;
 function attemptPlayBackgroundAudio(){
   if(backgroundAudioReady) return;
-  backgroundAudio.volume = 0.5;
+  backgroundAudio.volume = 0.3;
   backgroundAudio.loop = true;
   const playPromise = backgroundAudio.play();
   if(playPromise && typeof playPromise.then === 'function'){
